@@ -2,9 +2,12 @@
 -- Use of this source code is governed by a MIT license that can be
 -- found in the LICENSE file.
 
+-- luacheck: no unused
+
 local Class = require"lualiftoff.util.class"
 local Ast = require"lualiftoff.parser.ast"
 local Opcode = require"lualiftoff.parser.opcode"
+local error = require"lualiftoff.lua.error"
 
 local CodeGen = Class"CodeGen"
 
@@ -70,8 +73,8 @@ function CodeGen.__index:to_acc()
       self.emit(Opcode.GET_UPVAL, self.expr_value)
    elseif self.expr_kind == 3 then
       self.emit(Opcode.GET_CONST, self.expr_value)
-   elseif self.expr_kind == 4 then
-
+   -- elseif self.expr_kind == 4 then
+      -- TODO
    end
    -- TODO
 end
@@ -370,7 +373,7 @@ end
 
 
 function CodeGen.__index:visit_error(msg)
-   error(msg)
+   error.error(msg)
 end
 
 return CodeGen

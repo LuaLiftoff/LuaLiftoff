@@ -1,12 +1,15 @@
+-- Copyright 2022 the LuaLiftoff project authors.
+-- Use of this source code is governed by a MIT license that can be
+-- found in the LICENSE file.
 
-local Lexer = require"lualiftoff.parser.lexer"
+local Lexer = require "lualiftoff.parser.lexer"
 
 local function with_lexer(input, func)
    return function()
       local lexer = Lexer(input)
       func(lexer, input)
       assert.same("eof", lexer:next_token())
-      assert.same(#input+1, lexer.start)
+      assert.same(#input + 1, lexer.start)
 
       local index = 0
       lexer = Lexer(function()
@@ -15,7 +18,7 @@ local function with_lexer(input, func)
       end)
       func(lexer, input)
       assert.same("eof", lexer:next_token())
-      assert.same(#input+1, lexer.start)
+      assert.same(#input + 1, lexer.start)
 
       index = -1
       lexer = Lexer(function()
@@ -24,7 +27,7 @@ local function with_lexer(input, func)
       end)
       func(lexer, input)
       assert.same("eof", lexer:next_token())
-      assert.same(#input+1, lexer.start)
+      assert.same(#input + 1, lexer.start)
    end
 end
 

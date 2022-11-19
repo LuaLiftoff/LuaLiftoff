@@ -2,13 +2,14 @@
 -- Use of this source code is governed by a MIT license that can be
 -- found in the LICENSE file.
 
+local error = require"lualiftoff.lua.error"
+
 local ACC_D = 0
 local ACC_R = 1
 local ACC_W = 2
 local ACC_RW = 3
 local ACC_V = 4
 
-local EXT_D = 0
 local EXT_LR = 1
 local EXT_LX = 2
 local EXT_LU = 3
@@ -28,7 +29,7 @@ local next = 0
 local opcodes = {}
 
 local function nextOpcode(name, acc_use, reg_use, second, third)
-   if next >= 256 then error("Too many opcodes") end
+   if next >= 256 then error.error("Too many opcodes") end
    local opcode = next
    next = next + 1
    opcodes[name] = opcode
@@ -153,7 +154,5 @@ nextOpcode("TFOR_PREP", ACC_D, EXT_SR, EXT_J, EXT_J)
 nextOpcode("TFOR_LOOP", ACC_D, EXT_LSR, EXT_SRL, EXT_J)
 
 nextOpcode("WIDE", ACC_D, EXT_LI)
-
-print(next)
 
 return opcodes

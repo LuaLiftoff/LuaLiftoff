@@ -2,6 +2,8 @@
 -- Use of this source code is governed by a MIT license that can be
 -- found in the LICENSE file.
 
-local Graph = require "lualiftoff.compiler.graph"
+local global = require "_G"
 
-return Graph.Node
+return {
+   select = global.select
+}

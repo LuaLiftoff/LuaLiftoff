@@ -1,5 +1,7 @@
 # LuaLiftoff
 
+**Note**: LuaLiftoff is currently in development and is currently not able to do anything interesting!
+
 LuaLiftoff is a [Lua](https://github.com/lua/lua) interpreter with an additional JIT compiler. And everything is written in Lua.
 
 ## Getting the Code

@@ -2,11 +2,15 @@
 -- Use of this source code is governed by a MIT license that can be
 -- found in the LICENSE file.
 
-local Class = require"lualiftoff.util.class"
+local Class = require "lualiftoff.util.class"
+local table = require "lualiftoff.lua.table"
+local assert = require "lualiftoff.lua.assert"
+local string = require "lualiftoff.lua.string"
+local math = require "lualiftoff.lua.math"
 
 local inspect_with_ctx
 
-local function header(ctx, obj)
+local function header(_ctx, obj)
    local class = Class:get_class(obj)
    if class then return class.name .. "[", "]", false end
    return "{", "}", true
@@ -33,11 +37,11 @@ local function inspect_table(ctx, parts, obj)
    local string_keys = {}
    local other_keys = {}
 
-   for k, v in pairs(obj) do
+   for k, v in table.pairs(obj) do
       copy[k] = v
-      local t = type(k)
+      local t = Class.type(k)
       if t == "number" then
-         number_keys[#number_keys+1] = k
+         number_keys[#number_keys + 1] = k
          if max_int >= 0 and k > 0 and math.floor(k) == k then
             if k > max_int then
                max_int = k
@@ -46,14 +50,14 @@ local function inspect_table(ctx, parts, obj)
             max_int = -2
          end
       elseif t == "string" then
-         string_keys[#string_keys+1] = k
+         string_keys[#string_keys + 1] = k
       else
-         other_keys[#other_keys+1] = k
+         other_keys[#other_keys + 1] = k
       end
    end
 
-   if next(copy) == nil then
-      parts[#parts+1] = close
+   if table.next(copy) == nil then
+      parts[#parts + 1] = close
       return
    end
 
@@ -61,12 +65,12 @@ local function inspect_table(ctx, parts, obj)
 
    parts[idx], idx = indent, idx + 1
 
-   for _, k in ipairs(string_keys) do
+   for _, k in table.ipairs(string_keys) do
       local v = copy[k]
       if string.match(k, "^[A-Za-z_]+$") then
-         parts[idx], parts[idx+1], idx = k, " = ", idx + 2
+         parts[idx], parts[idx + 1] = k, " = "
       else
-         parts[idx], idx = string.format("[%q] = ", k), idx + 1
+         parts[idx] = string.format("[%q] = ", k)
       end
       inspect_with_ctx(ctx, parts, v)
       idx = #parts + 1
@@ -85,26 +89,26 @@ local function inspect_table(ctx, parts, obj)
 
       parts[idx], idx = "[", idx + 1
 
-      for _, k in ipairs(number_keys) do
+      for _, k in table.ipairs(number_keys) do
          local v = copy[k]
-         parts[idx], parts[idx+1], idx = tostring(k), "] = ", idx + 2
+         parts[idx], parts[idx + 1] = string.to_string(k), "] = "
          inspect_with_ctx(ctx, parts, v)
          idx = #parts + 1
          parts[idx], idx = seperator_indent_open, idx + 1
       end
 
-      for _, k in ipairs(other_keys) do
+      for _, k in table.ipairs(other_keys) do
          local v = copy[k]
          inspect_with_ctx(ctx, parts, k)
-         parts[#parts+1] = "] = "
+         parts[#parts + 1] = "] = "
          inspect_with_ctx(ctx, parts, v)
-         parts[#parts+1] = seperator_indent_open
+         parts[#parts + 1] = seperator_indent_open
       end
    end
 
    if old_indent then
       parts[#parts] = old_indent
-      parts[#parts+1] = close
+      parts[#parts + 1] = close
       ctx.indent = old_indent
    else
       parts[#parts] = close
@@ -114,21 +118,21 @@ end
 
 local inspect_types = {
    ["table"] = inspect_table,
-   ["string"] = function(ctx, parts, obj) parts[#parts+1] = string.format("%q", obj) end
+   ["string"] = function(_ctx, parts, obj) parts[#parts + 1] = string.format("%q", obj) end
 }
 
 function inspect_with_ctx(ctx, parts, obj)
-   local t = inspect_types[type(obj)]
+   local t = inspect_types[table.type(obj)]
    if t then
       t(ctx, parts, obj)
    else
-      parts[#parts+1] = tostring(obj)
+      parts[#parts + 1] = string.to_string(obj)
    end
 end
 
 local function inspect(obj)
-   local t = inspect_types[type(obj)]
-   if not t then return tostring(obj) end
+   local t = inspect_types[table.type(obj)]
+   if not t then return string.to_string(obj) end
    local parts = {}
    local ctx = {header = header, indent = "\n"}
    t(ctx, parts, obj)

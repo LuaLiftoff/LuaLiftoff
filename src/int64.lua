@@ -1,3 +1,13 @@
+-- Copyright 2022 the LuaLiftoff project authors.
+-- Use of this source code is governed by a MIT license that can be
+-- found in the LICENSE file.
+
+local Class = require"lualiftoff.util.class"
+local table = require"lualiftoff.lua.table"
+local assert = require"lualiftoff.lua.assert"
+local error = require"lualiftoff.lua.error"
+local math = require"lualiftoff.lua.math"
+local string = require"lualiftoff.lua.string"
 
 local function is_u32(x)
    return x >= 0 and x <= 0xFFFFFFFF and math.floor(x) == x
@@ -128,7 +138,7 @@ local function u64neg(a_l, a_h)
 end
 
 local function u64div(a_l, a_h, b_l, b_h)
-   if b_l + b_h == 0 then error("attempt to divide by zero") end
+   if b_l + b_h == 0 then error.error("attempt to divide by zero") end
    if a_h == 0 then
       if b_h ~= 0 or a_l == 0 then return 0, 0, a_l, 0 end
       local rem = a_l % b_l
@@ -171,13 +181,14 @@ local function u64div(a_l, a_h, b_l, b_h)
 end
 
 local function i64div(a_l, a_h, b_l, b_h)
-   local a_n, b_n, r_l, r_h = false, false, nil, nil
+   local a_n, b_n = false, false
    if a_h > 0x7FFFFFFF then
       a_n, a_l, a_h = true, u64neg(a_l, a_h)
    end
    if b_h > 0x7FFFFFFF then
       b_n, b_l, b_h = true, u64neg(b_l, b_h)
    end
+   local r_l, r_h
    a_l, a_h, r_l, r_h = u64div(a_l, a_h, b_l, b_h)
    if a_n ~= b_n then
       a_l, a_h = u64neg(a_l, a_h)
@@ -197,12 +208,12 @@ local int64 = {}
 int64.__index = int64
 
 local function is_int64(x)
-   return getmetatable(x) == int64
+   return table.getmetatable(x) == int64
 end
 
 local function to_int64(x)
    if is_int64(x) then return x[1], x[2] end
-   if type(x) == "number" then
+   if Class.type(x) == "number" then
       local neg = false
       if x < 0 then neg, x = true, -x end
       local lo = x % 0x100000000
@@ -213,12 +224,12 @@ local function to_int64(x)
       end
       return lo, hi
    end
-   error("Invalid")
+   error.error("Invalid")
 end
 
 local function new_int64(lo, hi)
    assert(is_u32(lo) and is_u32(hi))
-   return setmetatable({lo, hi}, int64)
+   return table.setmetatable({lo, hi}, int64)
 end
 
 function int64.new(hi, lo)
@@ -227,7 +238,7 @@ function int64.new(hi, lo)
    return new_int64(lo, hi)
 end
 
-setmetatable(int64, {
+table.setmetatable(int64, {
    __call = function(self, hi, lo)
       return self.new(hi, lo)
    end
@@ -416,7 +427,5 @@ end
 function int64:__tostring()
    return int64.tostring(self)
 end
-
-print(int64(0xFFFFFFFF, 0xFFFFFFF4):bit_shl(1):tostring(16))
 
 return int64

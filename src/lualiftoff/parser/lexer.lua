@@ -2,20 +2,18 @@
 -- Use of this source code is governed by a MIT license that can be
 -- found in the LICENSE file.
 
-local Class = require"lualiftoff.util.class"
-
-local utf8 = require"utf8"
-local string = require"string"
-local table = require"table"
-
-local type, tostring = type, tostring
+local Class = require "lualiftoff.util.class"
+local string = require "lualiftoff.lua.string"
+local table = require "lualiftoff.lua.table"
+local assert = require "lualiftoff.lua.assert"
+local error = require "lualiftoff.lua.error"
 
 local EOF = -1
 
-local NL = string.byte"\n"
-local CR = string.byte"\r"
+local NL = string.byte "\n"
+local CR = string.byte "\r"
 
-local Lexer = Class"Lexer"
+local Lexer = Class "Lexer"
 
 local char_tags = {}
 for i = -1, 255 do
@@ -48,26 +46,26 @@ local function newline_escape(lexer, c)
 end
 
 local default_escape_handlers = {
-   [string.byte"x"] = make_call_method("handle_hex_escape"),
-   [string.byte"z"] = make_call_method("handle_zap_sapce_escape"),
-   [string.byte"u"] = make_call_method("handle_unicode_escape"),
-   [string.byte"a"] = make_replace_escape("\a"),
-   [string.byte"b"] = make_replace_escape("\b"),
-   [string.byte"f"] = make_replace_escape("\f"),
-   [string.byte"n"] = make_replace_escape("\n"),
-   [string.byte"r"] = make_replace_escape("\r"),
-   [string.byte"t"] = make_replace_escape("\t"),
-   [string.byte"v"] = make_replace_escape("\v"),
-   [string.byte"\\"] = make_replace_escape("\\"),
-   [string.byte"\""] = make_replace_escape("\""),
-   [string.byte"'"] = make_replace_escape("'"),
-   [string.byte"\n"] = newline_escape,
-   [string.byte"\r"] = newline_escape,
+   [string.byte "x"] = make_call_method("handle_hex_escape"),
+   [string.byte "z"] = make_call_method("handle_zap_sapce_escape"),
+   [string.byte "u"] = make_call_method("handle_unicode_escape"),
+   [string.byte "a"] = make_replace_escape("\a"),
+   [string.byte "b"] = make_replace_escape("\b"),
+   [string.byte "f"] = make_replace_escape("\f"),
+   [string.byte "n"] = make_replace_escape("\n"),
+   [string.byte "r"] = make_replace_escape("\r"),
+   [string.byte "t"] = make_replace_escape("\t"),
+   [string.byte "v"] = make_replace_escape("\v"),
+   [string.byte "\\"] = make_replace_escape("\\"),
+   [string.byte "\""] = make_replace_escape("\""),
+   [string.byte "'"] = make_replace_escape("'"),
+   [string.byte "\n"] = newline_escape,
+   [string.byte "\r"] = newline_escape,
 }
 
 local handle_digit_escape = make_call_method("handle_digit_escape")
 for i = 0, 9 do
-   default_escape_handlers[string.byte(tostring(i))] = handle_digit_escape
+   default_escape_handlers[string.byte(string.to_string(i))] = handle_digit_escape
 end
 
 local handle_long_string = make_call_method("handle_long_string")
@@ -75,7 +73,7 @@ local handle_long_string = make_call_method("handle_long_string")
 local handle_default = make_call_method("handle_default")
 
 local function make_handle_token(what)
-   return function(lexer, c, len)
+   return function(lexer, _c, len)
       lexer:next_char(len)
       return what
    end
@@ -84,48 +82,48 @@ end
 local handle_string = make_call_method("handle_string")
 
 local default_handlers = {
-   [string.byte"'"] = handle_string,
-   [string.byte"\""] = handle_string,
-   [string.byte"-"] = {
-      [string.byte"-"] = make_call_method("handle_comment"),
+   [string.byte "'"] = handle_string,
+   [string.byte "\""] = handle_string,
+   [string.byte "-"] = {
+      [string.byte "-"] = make_call_method("handle_comment"),
       handler = make_handle_token("-")
    },
-   [string.byte"["] = {
-      [string.byte"["] = handle_long_string,
-      [string.byte"="] = handle_long_string,
+   [string.byte "["] = {
+      [string.byte "["] = handle_long_string,
+      [string.byte "="] = handle_long_string,
       handler = make_handle_token("[")
    },
-   [string.byte"<"] = {
-      [string.byte"<"] = make_handle_token("<<"),
-      [string.byte"="] = make_handle_token("<="),
+   [string.byte "<"] = {
+      [string.byte "<"] = make_handle_token("<<"),
+      [string.byte "="] = make_handle_token("<="),
       handler = make_handle_token("<")
    },
-   [string.byte">"] = {
-      [string.byte">"] = make_handle_token(">>"),
-      [string.byte"="] = make_handle_token(">="),
+   [string.byte ">"] = {
+      [string.byte ">"] = make_handle_token(">>"),
+      [string.byte "="] = make_handle_token(">="),
       handler = make_handle_token(">")
    },
-   [string.byte"="] = {
-      [string.byte"="] = make_handle_token("=="),
+   [string.byte "="] = {
+      [string.byte "="] = make_handle_token("=="),
       handler = make_handle_token("=")
    },
-   [string.byte"~"] = {
-      [string.byte"="] = make_handle_token("~="),
+   [string.byte "~"] = {
+      [string.byte "="] = make_handle_token("~="),
       handler = make_handle_token("~")
    },
-   [string.byte"."] = {
-      [string.byte"."] = {
-         [string.byte"."] = make_handle_token("..."),
+   [string.byte "."] = {
+      [string.byte "."] = {
+         [string.byte "."] = make_handle_token("..."),
          handler = make_handle_token("..")
       },
       handler = make_handle_token(".")
    },
-   [string.byte":"] = {
-      [string.byte":"] = make_handle_token("::"),
+   [string.byte ":"] = {
+      [string.byte ":"] = make_handle_token("::"),
       handler = make_handle_token(":")
    },
-   [string.byte"/"] = {
-      [string.byte"/"] = make_handle_token("//"),
+   [string.byte "/"] = {
+      [string.byte "/"] = make_handle_token("//"),
       handler = make_handle_token("/")
    },
    handler = handle_default
@@ -140,7 +138,7 @@ end
 
 local handle_number = make_call_method("handle_number")
 for i = 0, 9 do
-   local b = string.byte(tostring(i))
+   local b = string.byte(string.to_string(i))
    default_handlers[b] = handle_number
    char_tags[b].is_identifier = true
 end
@@ -154,7 +152,7 @@ for i = 1, #identifiers do
 end
 
 function Lexer.__index:init(gen)
-   if type(gen) == "string" then
+   if Class.type(gen) == "string" then
       self.gen = gen_nil
       self.buffer = gen
    else
@@ -176,6 +174,7 @@ function Lexer.__index:init(gen)
 end
 
 function Lexer.__index:error(message)
+   error.error(message)
 end
 
 function Lexer.__index:next_buffer()
@@ -187,7 +186,7 @@ function Lexer.__index:next_buffer()
       return buffer
    end
    local buffer = self.gen()
-   assert(type(buffer) == "string")
+   assert(Class.type(buffer) == "string")
    if buffer == "" then
       self.gen = gen_nil
    end
@@ -244,7 +243,7 @@ function Lexer.__index:read_until(predicate)
          while not predicate(c) do
             offset = offset + 1
             if #buffer < offset then
-               parts[#parts+1] = buffer
+               parts[#parts + 1] = buffer
                self.buffer_position = self.buffer_position + #buffer
                buffer = self:next_buffer()
                if buffer == "" then
@@ -256,7 +255,7 @@ function Lexer.__index:read_until(predicate)
             end
             c = string.byte(buffer, offset)
          end
-         parts[#parts+1] = string.sub(buffer, 1, offset-1)
+         parts[#parts + 1] = string.sub(buffer, 1, offset - 1)
          self.buffer = buffer
          self.offset = offset
          return table.concat(parts), c
@@ -264,7 +263,7 @@ function Lexer.__index:read_until(predicate)
       c = string.byte(buffer, offset)
    end
    self.offset = offset
-   return string.sub(buffer, start_offset, offset-1), c
+   return string.sub(buffer, start_offset, offset - 1), c
 end
 
 local function is_newline(c)
@@ -302,7 +301,7 @@ local function is_not_identifier(c)
 end
 
 local function is_special_long(c)
-   return c == string.byte"]" or is_newline(c)
+   return c == string.byte "]" or is_newline(c)
 end
 
 function Lexer.__index:handle_identifier()
@@ -319,27 +318,28 @@ function Lexer.__index:read_long_string(c, sep, token)
    if is_newline(c) then
       self:skip_newline(c)
    end
-   local parts, part = {}, ""
+   local parts = {}
+   local part
    while true do
       part, c = self:read_until(is_special_long)
-      parts[#parts+1] = part
-      if c == string.byte"]" then
+      parts[#parts + 1] = part
+      if c == string.byte "]" then
          local dep = 0
          c = self:next_char()
-         while c == string.byte'=' do
+         while c == string.byte "=" do
             dep = dep + 1
             c = self:next_char()
          end
-         if c == string.byte"]" and dep == sep then
+         if c == string.byte "]" and dep == sep then
             self.value = table.concat(parts)
             self:next_char()
             return token
          end
-         parts[#parts+1] = "]"
-         parts[#parts+1] = string.rep("=", dep)
+         parts[#parts + 1] = "]"
+         parts[#parts + 1] = string.rep("=", dep)
       elseif is_newline(c) then
          self:skip_newline(c)
-         parts[#parts+1] = "\n"
+         parts[#parts + 1] = "\n"
       else
          self:error("Invalid long " .. token)
          self.value = table.concat(parts)
@@ -348,19 +348,19 @@ function Lexer.__index:read_long_string(c, sep, token)
    end
 end
 
-function Lexer.__index:handle_comment(c, prefix_len)
-   c = self:next_char(prefix_len)
-   if c ~= string.byte'[' then
+function Lexer.__index:handle_comment(_c, prefix_len)
+   local c = self:next_char(prefix_len)
+   if c ~= string.byte "[" then
       self.value = self:read_until(is_newline)
       return "comment"
    end
    c = self:next_char()
    local dep = 0
-   while c == string.byte'=' do
+   while c == string.byte "=" do
       dep = dep + 1
       c = self:next_char()
    end
-   if c ~= string.byte"[" then
+   if c ~= string.byte "[" then
       self.value = "[" .. string.rep("=", dep) .. self:read_until(is_newline)
       return "comment"
    end
@@ -369,14 +369,14 @@ function Lexer.__index:handle_comment(c, prefix_len)
 end
 
 function Lexer.__index:handle_long_string(c)
-   assert(c == string.byte"[")
+   assert(c == string.byte "[")
    c = self:next_char()
    local dep = 0
-   while c == string.byte'=' do
+   while c == string.byte "=" do
       dep = dep + 1
       c = self:next_char()
    end
-   if c == string.byte"[" then
+   if c == string.byte "[" then
       c = self:next_char()
    else
       self:error("Invalid long string")
@@ -385,16 +385,16 @@ function Lexer.__index:handle_long_string(c)
 end
 
 local function is_string_special(c)
-   return c == string.byte"'" or c == string.byte'"' or c == string.byte"\\" or is_newline(c)
+   return c == string.byte "'" or c == string.byte '"' or c == string.byte "\\" or is_newline(c)
 end
 
 local function hex_value(c)
-   if c >= string.byte"0" and c <= string.byte"9" then
-      return c - string.byte"0"
-   elseif c >= string.byte"a" and c <= string.byte"z" then
-      return c - string.byte"a" + 10
-   elseif c >= string.byte"A" and c <= string.byte"Z" then
-      return c - string.byte"A" + 10
+   if c >= string.byte "0" and c <= string.byte "9" then
+      return c - string.byte "0"
+   elseif c >= string.byte "a" and c <= string.byte "z" then
+      return c - string.byte "a" + 10
+   elseif c >= string.byte "A" and c <= string.byte "Z" then
+      return c - string.byte "A" + 10
    end
    return -1
 end
@@ -421,11 +421,11 @@ function Lexer.__index:handle_zap_sapce_escape()
 end
 
 function Lexer.__index:handle_digit_escape(c)
-   local v = c - string.byte"0"
-   local n = self:next_char() - string.byte"0"
+   local v = c - string.byte "0"
+   local n = self:next_char() - string.byte "0"
    if n >= 0 and n <= 9 then
       v = v * 10 + n
-      n = self:next_char() - string.byte"0"
+      n = self:next_char() - string.byte "0"
       if n >= 0 and n <= 9 then
          v = v * 10 + n
          if v > 255 then
@@ -440,7 +440,7 @@ end
 
 function Lexer.__index:handle_unicode_escape(start)
    local c = self:next_char()
-   if c ~= string.byte"{" then
+   if c ~= string.byte "{" then
       self:error("Invalid unicode escape")
       return "\\" .. string.char(start)
    end
@@ -453,20 +453,31 @@ function Lexer.__index:handle_unicode_escape(start)
    c = self:next_char()
    local hv = hex_value(c)
    while hv >= 0 and hv <= 15 do
-      if v > 0x7FFFFFF then
+      if v >= 0x8000000 then
          self:error("UTF-8 value too large")
-         v = v & 0x7FFFFFF
+         v = v % 0x8000000
       end
       v = v * 16 + hv
       c = self:next_char()
       hv = hex_value(c)
    end
-   if c == string.byte"}" then
+   if c == string.byte "}" then
       self:next_char()
    else
       self:error("Invalid unicode escape")
    end
-   return utf8.char(v)
+   if v < 0x80 then return string.char(v) end
+   local space = 0x3f
+   local str = ""
+   repeat
+      local cv = v % 0x40
+      v = (v - cv) / 0x40
+      str = string.char(0x80 + cv) .. str
+      space = (space - 1) / 2
+      assert(space > 0)
+   until v <= space
+   local prefix = 0xFE - space * 2
+   return string.char(prefix + v) .. str
 end
 
 function Lexer.__index:handle_string(del)
@@ -479,26 +490,26 @@ function Lexer.__index:handle_string(del)
    end
    local parts = {part}
    while true do
-      if c == string.byte"\\" then
+      if c == string.byte "\\" then
          c = self:next_char()
          local handler = self.escape_handlers[c]
          if handler then
-            parts[#parts+1] = handler(self, c)
+            parts[#parts + 1] = handler(self, c)
          else
             self:error("Invalid escape sequence")
-            parts[#parts+1] = "\\"
-            parts[#parts+1] = string.char(c)
+            parts[#parts + 1] = "\\"
+            parts[#parts + 1] = string.char(c)
          end
       elseif is_newline(c) or c == EOF then
          self:error("Unterminated string")
          self.value = table.concat(parts)
          return "string"
       else
-         parts[#parts+1] = string.char(c)
+         parts[#parts + 1] = string.char(c)
          self:next_char()
       end
       part, c = self:read_until(is_string_special)
-      parts[#parts+1] = part
+      parts[#parts + 1] = part
       if c == del then
          self.value = table.concat(parts)
          self:next_char()
@@ -537,7 +548,7 @@ function Lexer.__index:next_token()
    local prefix_len = 1
    handlers = handlers[c]
    while handlers do
-      if type(handlers) == "function" then
+      if Class.type(handlers) == "function" then
          best_handler = handlers
          best_prefix_len = prefix_len
          break

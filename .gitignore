@@ -1,4 +1,4 @@
 .vscode
-/coverage
 /doc/private
 /build
+lcov.info

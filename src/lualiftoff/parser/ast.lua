@@ -2,9 +2,11 @@
 -- Use of this source code is governed by a MIT license that can be
 -- found in the LICENSE file.
 
-local Class = require"lualiftoff.util.class"
+local Class = require "lualiftoff.util.class"
+local assert = require "lualiftoff.lua.assert"
+local error = require "lualiftoff.lua.error"
 
-local Ast = Class"Ast"
+local Ast = Class "Ast"
 
 local function AstNode(name, super)
    local class = Class(name, super)
@@ -51,38 +53,37 @@ local Nil = AstNode("Nil", Expression)
 local Varargs = AstNode("Varargs", Expression)
 
 function Ast.__index:init(start_position, end_position)
-   assert(type(start_position) == "number")
-   assert(type(end_position) == "nil" or type(end_position) == "number")
+   assert(Class.type(start_position) == "number")
+   assert(Class.type(end_position) == "nil" or Class.type(end_position) == "number")
    self.start_position = start_position
    self.end_position = end_position or start_position
    return self
 end
 
 function Ast.__index:set_end(position)
-   assert(type(position) == "number")
+   assert(Class.type(position) == "number")
    self.end_position = position
    return self
 end
 
-function Ast.__index:visit(visitor)
-   error("NYI")
+function Ast.__index:visit(_visitor)
+   error.error("NYI")
 end
 
-function Ast.__index:visit_codegen(visitor)
-   error("NYI")
+function Ast.__index:visit_codegen(_visitor)
+   error.error("NYI")
 end
-
 
 function Statements.__index:init(start_position, end_position, statements)
    self = Statements:super().init(self, start_position, end_position)
-   assert(statements == nil or type(statements) == "table")
+   assert(statements == nil or Class.type(statements) == "table")
    self.statements = statements or {}
    return self
 end
 
 function Statements.__index:add_statement(statement)
    assert(Statement:is_instance(statement))
-   self.statements[#self.statements+1] = statement
+   self.statements[#self.statements + 1] = statement
    return self
 end
 
@@ -106,7 +107,7 @@ end
 
 function Identifier.__index:init(start_position, end_position, identifier)
    self = Identifier:super().init(self, start_position, end_position)
-   assert(identifier == nil or type(identifier) == "string")
+   assert(identifier == nil or Class.type(identifier) == "string")
    self.identifier = identifier
    return self
 end
@@ -117,14 +118,14 @@ end
 
 function ExpressionList.__index:init(start_position, end_position, list)
    self = ExpressionList:super().init(self, start_position, end_position)
-   assert(list == nil or type(list) == "table")
+   assert(list == nil or Class.type(list) == "table")
    self.list = list or {}
    return self
 end
 
 function ExpressionList.__index:add_expression(expression)
    assert(Expression:is_instance(expression))
-   self.list[#self.list+1] = expression
+   self.list[#self.list + 1] = expression
    return self
 end
 
@@ -149,7 +150,7 @@ end
 function Declaration.__index:init(start_position, end_position, identifier, attributes)
    self = Declaration:super().init(self, start_position, end_position)
    assert(identifier == nil or Identifier:is_instance(identifier))
-   assert(attributes == nil or type(attributes) == "table")
+   assert(attributes == nil or Class.type(attributes) == "table")
    self.identifier = identifier
    self.attributes = attributes or {}
    return self
@@ -157,7 +158,7 @@ end
 
 function Declaration.__index:add_attribute(attribute)
    assert(Identifier:is_instance(attribute))
-   self.attributes[#self.attributes+1] = attribute
+   self.attributes[#self.attributes + 1] = attribute
    return self
 end
 
@@ -180,14 +181,13 @@ function Declaration.__index:visit_codegen(visitor)
    return node
 end
 
-
 function Empty.__index:visit_codegen(visitor)
    return visitor:visit_empty_statement(self.start_position, self.end_position)
 end
 
 function Assignment.__index:init(start_position, end_position, lvalues, rvalues)
    self = Assignment:super().init(self, start_position, end_position)
-   assert(lvalues == nil or type(lvalues) == "table")
+   assert(lvalues == nil or Class.type(lvalues) == "table")
    assert(rvalues == nil or ExpressionList:is_instance(rvalues))
    self.lvalues = lvalues or {}
    self.rvalues = rvalues
@@ -196,7 +196,7 @@ end
 
 function Assignment.__index:add_lvalue(lvalue)
    assert(Expression:is_instance(lvalue))
-   self.lvalues[#self.lvalues+1] = lvalue
+   self.lvalues[#self.lvalues + 1] = lvalue
    return self
 end
 
@@ -228,7 +228,7 @@ end
 
 function Local.__index:init(start_position, end_position, declarations, init)
    self = Local:super().init(self, start_position, end_position)
-   assert(declarations == nil or type(declarations) == "table")
+   assert(declarations == nil or Class.type(declarations) == "table")
    assert(init == nil or ExpressionList:is_instance(init))
    self.declarations = declarations or {}
    self.init = init
@@ -237,7 +237,7 @@ end
 
 function Local.__index:add_declaration(declaration)
    assert(Declaration:is_instance(declaration))
-   self.declarations[#self.declarations+1] = declaration
+   self.declarations[#self.declarations + 1] = declaration
    return self
 end
 
@@ -266,7 +266,6 @@ function Local.__index:visit_codegen(visitor)
    return node
 end
 
-
 function Variable.__index:init(start_position, end_position, identifier)
    self = Variable:super().init(self, start_position, end_position)
    assert(Identifier:is_instance(identifier))
@@ -285,7 +284,7 @@ end
 
 function Number.__index:init(start_position, end_position, value)
    self = Number:super().init(self, start_position, end_position)
-   assert(type(value) == "string")
+   assert(Class.type(value) == "string")
    self.value = value
    return self
 end
@@ -296,7 +295,7 @@ end
 
 function String.__index:init(start_position, end_position, value)
    self = String:super().init(self, start_position, end_position)
-   assert(type(value) == "string")
+   assert(Class.type(value) == "string")
    self.value = value
    return self
 end
@@ -307,14 +306,14 @@ end
 
 function Table.__index:init(start_position, end_position, records)
    self = Table:super().init(self, start_position, end_position)
-   assert(records == nil or type(records) == "table")
+   assert(records == nil or Class.type(records) == "table")
    self.records = records or {}
    return self
 end
 
 function Table.__index:add_record(record)
    assert(Expression:is_instance(record) or Record:is_instance(record))
-   self.records[#self.records+1] = record
+   self.records[#self.records + 1] = record
    return self
 end
 
@@ -342,12 +341,11 @@ function Record.__index:visit_codegen(visitor)
    return visitor:visit_record(self.start_position, self.end_position, key, expr)
 end
 
-
 function Function.__index:init(start_position, end_position, is_method, arguments, is_vararg, body)
    self = Function:super().init(self, start_position, end_position)
-   assert(is_method == nil or type(is_method) == "boolean")
-   assert(arguments == nil or type(arguments) == "table")
-   assert(is_vararg == nil or type(is_vararg) == "boolean")
+   assert(is_method == nil or Class.type(is_method) == "boolean")
+   assert(arguments == nil or Class.type(arguments) == "table")
+   assert(is_vararg == nil or Class.type(is_vararg) == "boolean")
    assert(body == nil or Statements:is_instance(body))
    self.is_method = is_method and true or false
    self.arguments = arguments or {}
@@ -358,7 +356,7 @@ end
 
 function Function.__index:add_argument(arg)
    assert(Declaration:is_instance(arg))
-   self.arguments[#self.arguments+1] = arg
+   self.arguments[#self.arguments + 1] = arg
    return self
 end
 
@@ -385,7 +383,6 @@ function Function.__index:visit_codegen(visitor)
    return visitor:visit_function_body(func, self.end_position, (visitor:visit(self.body)))
 end
 
-
 function Return.__index:init(start_position, end_position, returns)
    self = Return:super().init(self, start_position, end_position)
    assert(returns == nil or ExpressionList:is_instance(returns))
@@ -404,11 +401,10 @@ function Return.__index:visit_codegen(visitor)
    return visitor:visit_return_end(ret, self.end_position, (visitor:visit(self.returns)))
 end
 
-
 function BinaryOp.__index:init(start_position, end_position, left, op, right)
    self = BinaryOp:super().init(self, start_position, end_position)
    assert(left == nil or Expression:is_instance(left))
-   assert(op == nil or type(op) == "string")
+   assert(op == nil or Class.type(op) == "string")
    assert(right == nil or Expression:is_instance(right))
    self.left = left
    self.op = op
@@ -427,10 +423,9 @@ function BinaryOp.__index:visit_codegen(visitor)
    return visitor:visit_binary_op_end(expr, self.end_position, (visitor:visit(self.right)))
 end
 
-
 function UnaryOp.__index:init(start_position, end_position, op, expr)
    self = UnaryOp:super().init(self, start_position, end_position)
-   assert(op == nil or type(op) == "string")
+   assert(op == nil or Class.type(op) == "string")
    assert(expr == nil or Expression:is_instance(expr))
    self.op = op
    self.expr = expr
@@ -447,7 +442,6 @@ function UnaryOp.__index:visit_codegen(visitor)
    local expr = visitor:visit_unary_op(self.start_position, self.op)
    return visitor:visit_unary_op_end(expr, self.end_position, (visitor:visit(self.expr)))
 end
-
 
 function Call.__index:init(start_position, end_position, func, params)
    self = Call:super().init(self, start_position, end_position)
@@ -468,7 +462,6 @@ function Call.__index:visit_codegen(visitor)
    local expr = visitor:visit_call(self.start_position, visitor:visit(self.func))
    return visitor:visit_call_end(expr, self.end_position, (visitor:visit(self.params)))
 end
-
 
 function MethodCall.__index:init(start_position, end_position, func, member, params)
    self = MethodCall:super().init(self, start_position, end_position)
@@ -499,7 +492,6 @@ function MethodCall.__index:visit_codegen(visitor)
    return visitor:visit_method_call_end(expr, self.end_position, (visitor:visit(self.params)))
 end
 
-
 function ExpressionStatement.__index:init(start_position, end_position, expr)
    self = ExpressionStatement:super().init(self, start_position, end_position)
    assert(expr == nil or Expression:is_instance(expr))
@@ -518,11 +510,9 @@ function ExpressionStatement.__index:visit_codegen(visitor)
    return visitor:visit_expression_statement_end(statement, self.end_position, (visitor:visit(self.expr)))
 end
 
-
 function Break.__index:visit_codegen(visitor)
    return visitor:visit_break(self.start_position, self.end_position)
 end
-
 
 function If.__index:init(start_position, end_position, pred, true_block, false_block)
    self = If:super().init(self, start_position, end_position)
@@ -559,7 +549,6 @@ function If.__index:visit_codegen(visitor)
    statement = visitor:visit_if_true(statement, (visitor:visit(self.true_block)))
    return visitor:visit_if_end(statement, self.end_position, (visitor:visit(self.false_block)))
 end
-
 
 function ForNum.__index:init(start_position, end_position, decl, start, limit, step, body)
    self = ForNum:super().init(self, start_position, end_position)
@@ -608,10 +597,9 @@ function ForNum.__index:visit_codegen(visitor)
    return visitor:visit_for_num_end(loop, self.end_position, (visitor:visit(self.body)))
 end
 
-
 function ForIn.__index:init(start_position, end_position, decls, init, body)
    self = ForIn:super().init(self, start_position, end_position)
-   assert(decls == nil or type(decls) == "table")
+   assert(decls == nil or Class.type(decls) == "table")
    assert(init == nil or ExpressionList:is_instance(init))
    assert(body == nil or Statements:is_instance(body))
    self.decls = decls or {}
@@ -622,7 +610,7 @@ end
 
 function ForIn.__index:add_decl(decl)
    assert(Declaration:is_instance(decl))
-   self.decls[#self.decls+1] = decl
+   self.decls[#self.decls + 1] = decl
    return self
 end
 
@@ -647,7 +635,6 @@ function ForIn.__index:visit_codegen(visitor)
    loop = visitor:visit_for_in_init(loop, (visitor:visit(self.init)))
    return visitor:visit_for_in_end(loop, self.end_position, (visitor:visit(self.body)))
 end
-
 
 function While.__index:init(start_position, end_position, pred, body)
    self = While:super().init(self, start_position, end_position)
@@ -676,7 +663,6 @@ function While.__index:visit_codegen(visitor)
    return visitor:visit_while_end(loop, self.end_position, (visitor:visit(self.body)))
 end
 
-
 function Repeat.__index:init(start_position, end_position, body, pred)
    self = Repeat:super().init(self, start_position, end_position)
    assert(body == nil or Statements:is_instance(body))
@@ -703,7 +689,6 @@ function Repeat.__index:visit_codegen(visitor)
    loop = visitor:visit_repeat_body(loop, (visitor:visit(self.body)))
    return visitor:visit_repeat_end(loop, self.end_position, (visitor:visit(self.pred)))
 end
-
 
 function Block.__index:init(start_position, end_position, body)
    self = Block:super().init(self, start_position, end_position)
@@ -739,7 +724,6 @@ function Varargs.__index:visit_codegen(visitor)
    return visitor:visit_varargs(self.start_position, self.end_position)
 end
 
-
 function LocalFunction.__index:init(start_position, end_position, decl, body)
    self = LocalFunction:super().init(self, start_position, end_position)
    assert(decl == nil or Declaration:is_instance(decl))
@@ -751,7 +735,7 @@ end
 
 function LocalFunction.__index:set_decl(decl)
    assert(Declaration:is_instance(decl))
-   self.decl= decl
+   self.decl = decl
    return self
 end
 
@@ -766,7 +750,6 @@ function LocalFunction.__index:visit_codegen(visitor)
    func = visitor:visit_local_function_declaration(func, (visitor:visit(self.decl)))
    return visitor:visit_local_function_end(func, self.end_position, (visitor:visit(self.body)))
 end
-
 
 function Label.__index:init(start_position, end_position, name)
    self = Label:super().init(self, start_position, end_position)

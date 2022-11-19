@@ -2,7 +2,9 @@
 -- Use of this source code is governed by a MIT license that can be
 -- found in the LICENSE file.
 
-local assert, type, setmetatable, getmetatable = assert, type, setmetatable, getmetatable
+local table = require "lualiftoff.lua.table"
+local assert = require "lualiftoff.lua.assert"
+local global = require "_G"
 
 local Object = {
    name = "Object",
@@ -10,11 +12,11 @@ local Object = {
 }
 
 function Object.__index.__new(class, ...)
-   local obj = setmetatable({}, class)
+   local obj = table.setmetatable({}, class)
    return obj:init(...)
 end
 
-function Object.__index:init(...)
+function Object.__index:init()
    return self
 end
 
@@ -26,11 +28,13 @@ local Class = {
    end
 }
 
+Class.type = global.type
+
 function Class.__index:init(name, super)
-   assert(type(name) == "string")
+   assert(Class.type(name) == "string")
    assert(not super or Class:is_instance(super))
    self.name = name
-   self.__index = setmetatable({}, super or Object)
+   self.__index = table.setmetatable({}, super or Object)
    return self
 end
 
@@ -39,7 +43,7 @@ function Class.__index:extend(name)
 end
 
 function Class.__index:get_super()
-   return getmetatable(self.__index)
+   return table.getmetatable(self.__index)
 end
 
 function Class.__index:super()
@@ -47,9 +51,9 @@ function Class.__index:super()
 end
 
 function Class:get_class(obj)
-   if type(obj) ~= "table" then return nil end
-   local class = getmetatable(obj)
-   if getmetatable(class) ~= Class then return nil end
+   if Class.type(obj) ~= "table" then return nil end
+   local class = table.getmetatable(obj)
+   if table.getmetatable(class) ~= Class then return nil end
    return class
 end
 
@@ -59,7 +63,7 @@ function Class.__index:is_instance(obj)
 end
 
 function Class.__index:is_assignable_from(other)
-   assert(getmetatable(other) == Class)
+   assert(table.getmetatable(other) == Class)
    while other do
       if other == self then
          return true
@@ -69,8 +73,8 @@ function Class.__index:is_assignable_from(other)
    return false
 end
 
-setmetatable(Class, Class)
-setmetatable(Class.__index, Object)
-setmetatable(Object, Class)
+table.setmetatable(Class, Class)
+table.setmetatable(Class.__index, Object)
+table.setmetatable(Object, Class)
 
 return Class

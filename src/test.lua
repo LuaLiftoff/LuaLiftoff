@@ -1,4 +1,6 @@
 
+-- luacheck: globals print
+
 local Lexer = require"lualiftoff.parser.lexer"
 local Parser = require"lualiftoff.parser.parser"
 local AstBuilder = require"lualiftoff.parser.ast-builder"

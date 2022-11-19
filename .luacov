@@ -1,0 +1,11 @@
+return {
+   statsfile = "luacov.stats.out",
+   reportfile = "lcov.info",
+   deletestats = true,
+   include = {
+      "^src/"
+   },
+   exclude = {},
+   reporter = "lcov",
+   runreport = true,
+}

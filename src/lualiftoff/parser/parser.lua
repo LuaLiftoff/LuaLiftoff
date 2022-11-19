@@ -3,6 +3,7 @@
 -- found in the LICENSE file.
 
 local Class = require "lualiftoff.util.class"
+local string = require "lualiftoff.lua.string"
 
 local Parser = Class "Parser"
 
@@ -12,20 +13,23 @@ local function make_call_method(name)
    end
 end
 
-local function is_end(ctx, parser)
+local function is_end(_ctx, parser)
    return parser:is_identifier_value("end")
 end
 
-local ChunkBlockContext = { name = "Chunk", ends = is_end }
-local FunctionBlockContext = { name = "Function", ends = is_end }
-local DoBlockContext = { name = "Do", ends = is_end }
-local WhileBlockContext = { name = "While", ends = is_end }
-local ForBlockContext = { name = "For", ends = is_end }
-local RepeatBlockContext = { name = "Repeat", ends = function(ctx, parser) return parser:is_identifier_value("until") end }
-local IfBlockContext = { name = "If",
-   ends = function(ctx, parser) return parser:is_identifier_value("end") or parser:is_identifier_value("else") or
-       parser:is_identifier_value("elseif") end }
-local ElseBlockContext = { name = "Else", ends = is_end }
+local ChunkBlockContext = {name = "Chunk", ends = is_end}
+local FunctionBlockContext = {name = "Function", ends = is_end}
+local DoBlockContext = {name = "Do", ends = is_end}
+local WhileBlockContext = {name = "While", ends = is_end}
+local ForBlockContext = {name = "For", ends = is_end}
+local RepeatBlockContext = {name = "Repeat",
+                            ends = function(_ctx, parser) return parser:is_identifier_value("until") end}
+local IfBlockContext = {name = "If",
+                        ends = function(_ctx, parser) return parser:is_identifier_value("end") or
+                               parser:is_identifier_value("else") or
+                               parser:is_identifier_value("elseif")
+                        end}
+local ElseBlockContext = {name = "Else", ends = is_end}
 
 local default_statement_handlers = {
    identifier = function(parser)
@@ -461,7 +465,7 @@ function Parser.__index:parse_varargs()
    return self.visitor:visit_varargs(start, self:last_end_position())
 end
 
-function Parser.__index:parse_unknown_lexpression(priority)
+function Parser.__index:parse_unknown_lexpression()
    return self:error(string.format("Unexpected token %q", self.token)), true
 end
 
@@ -606,7 +610,8 @@ function Parser.__index:parse_expression_list()
 end
 
 function Parser.__index:parse_expression_statement_with_left(statement, left, allow_as_statement)
-   local start, expr = self:start_position()
+   local start = self:start_position()
+   local expr
    expr, allow_as_statement = self:parse_rexpression(start, left, 0, allow_as_statement)
    if self:is_token(",") or self:is_token("=") then
       return self:parse_assignment(statement.start_position, expr)
@@ -788,9 +793,7 @@ function Parser.__index:parse_for_num(start, decl)
 end
 
 function Parser.__index:parse_for_in(start, decl)
-   print("X")
    local loop = self.visitor:visit_for_in(start, decl)
-   print(">")
    while self:is_token(",") do
       self:next_non_space_token()
       decl = self:parse_declaration(false)

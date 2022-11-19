@@ -4,6 +4,7 @@
 
 local Class = require"lualiftoff.util.class"
 local Ast = require"lualiftoff.parser.ast"
+local error = require"lualiftoff.lua.error"
 
 local AstBuilder = Class"AstBuilder"
 
@@ -325,7 +326,7 @@ end
 
 
 function AstBuilder.__index:visit_error(msg)
-   error(msg)
+   error.error(msg)
 end
 
 return AstBuilder

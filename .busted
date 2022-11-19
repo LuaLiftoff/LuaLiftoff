@@ -1,5 +1,5 @@
 return {
-  default = {
-    verbose = true,
-  }
+   default = {
+      verbose = true,
+   }
 }

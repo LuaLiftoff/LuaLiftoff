@@ -5,9 +5,16 @@ charset = utf-8
 indent_style = space
 indent_size = 4
 end_of_line = lf
+detect_end_of_line = false
 insert_final_newline = true
+max_line_length = 120
 trim_trailing_whitespace = true
 
 
-[*.lua]
+[*.{lua,rockspec,busted,luacheckrc,luacov}]
 indent_size = 3
+quote_style = double
+table_separator_style = comma
+trailing_table_separator = keep
+keep_one_space_between_table_and_bracket = false
+align_table_field_to_first_field = true
